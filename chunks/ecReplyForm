@@ -1,0 +1,86 @@
+{set $isAdmin = $_modx->user.id && $_modx->context != 'mgr'}
+
+<form class="ec-reply-form ec-d-none" method="post" role="form" id="{$fid}" action="">
+    <input type="hidden" name="thread" value="{$thread}">
+    <input type="hidden" name="message_id" value="">
+    <input type="hidden" name="parent_id" value="">
+    
+    <div class="replayComment" >
+        Ответить на комментарий
+    </div>
+
+    <div class="ec-reply-form__row ec-antispam">
+        <label for="{$fid}-{$antispam_field}">{'ec_fe_message_antismap' | lexicon}</label>
+        <input type="text" name="{$antispam_field}" class="form-control" id="{$fid}-{$antispam_field}" value="" />
+        <span class="ec-error help-block ec-d-none" id="{$fid}-{$antispam_field}-error"></span>
+    </div>
+
+    <div class="ec-reply-form__row ec-input-parent" style="margin-bottom:0">
+        <div class="ec-smiles">
+          <button type="button" data-smile="😀">😀</button>
+          <button type="button" data-smile="😁">😁</button>
+          <button type="button" data-smile="😂">😂</button>
+          <button type="button" data-smile="🤣">🤣</button>
+          <button type="button" data-smile="😊">😊</button>
+          <button type="button" data-smile="😉">😉</button>
+          <button type="button" data-smile="😍">😍</button>
+          <button type="button" data-smile="😎">😎</button>
+          <button type="button" data-smile="🤔">🤔</button>
+          <button type="button" data-smile="😮">😮</button>
+          <button type="button" data-smile="😢">😢</button>
+          <button type="button" data-smile="😭">😭</button>
+          <button type="button" data-smile="😡">😡</button>
+          <button type="button" data-smile="👍">👍</button>
+          <button type="button" data-smile="👎">👎</button>
+          <button type="button" data-smile="🙏">🙏</button>
+          <button type="button" data-smile="❤️">❤️</button>
+          <button type="button" data-smile="🔥">🔥</button>
+        </div>
+        <textarea name="text" class="form-control" 
+            rows="3" 
+            id="{$fid}-text" 
+            required
+            maxlength="1000"
+            data-maxlength="1000"
+        >{$text}</textarea>
+        <div class="ec-counter">
+          <span class="current">0</span> / 1000
+        </div>
+        <span class="ec-error help-block ec-d-none" id="{$fid}-text-error"></span>
+    </div>
+
+    {if $isAdmin}
+        <div class="ec-reply-form__col ec-input-parent" style="margin-top:0">
+            <input type="text" name="user_name" value="{$_modx->user.fullname ?: $_modx->user.username}">
+            <label for="{$fid}-user_name">Менеджер</label>
+            <input type="hidden" name="user_email" value="{$_modx->user.email}">
+            <span class="ec-error help-block ec-d-none" id="{$fid}-user_name-error"></span>
+        </div>
+    {else}
+        <div class="ec-reply-form__row ec-form__cols" style="margin-top:0">
+            <div class="ec-reply-form__col ec-input-parent">
+                <input type="text" name="user_name" class="form-control" id="{$fid}-user_name" value="{$user_name}" required/>
+                <label for="{$fid}-user_name">{'ec_fe_message_user_name' | lexicon} (обязательно)</label>
+                <span class="ec-error help-block ec-d-none" id="{$fid}-user_name-error"></span>
+            </div>
+            <div class="ec-reply-form__col ec-input-parent">
+                <input type="text" name="user_email" class="form-control" id="{$fid}-user_email" value="{$user_email}" />
+                <label for="{$fid}-user_email">{'ec_fe_message_user_email' | lexicon}</label>
+                <span class="ec-error help-block ec-d-none" id="{$fid}-user_email-error"></span>
+            </div>
+        </div>
+    {/if}
+
+    {if !$isAdmin && $agreementCheckbox}
+        <div class="ec-reply-form__row ec-input-parent checkbox">
+            <label>
+                <input type="checkbox" name="agree" value="1" required> {'ec_fe_agree' | lexicon}
+            </label>
+        </div>
+    {/if}
+
+    <div class="buttons" >
+        <input type="submit" class="btn_red btn-primary" name="send" value="{'ec_fe_send' | lexicon}" />
+        <button type="button" class="btn btn-link js-ec-reply-form-cancel" name="cancel">Отмена</button>
+    </div>
+</form>
