@@ -1,9 +1,12 @@
 // вместо ec.js  настройках выбрать этот скрипт
 // изменения:
-// 1) выпилил рейтинг - мне он ни к чему
+// 1) выпилил рейтинг и файлы - мне они ни к чему
 // 2) добавил обработку мультивложенности ответов - добавяляет классы вложенности на основе parent_id
 // 3) добавляет имя кому отвечаем
 // 4) следит за временем публикации - 5 мин назад, 1 час назад, вчера, а если позже 2 дней то просто дата
+// 5) добавил смайлики
+// 6) добавил кнопку цитирования
+// 7) добавил счетчик максимум 1000 символов
 
 "use strict";
 
@@ -219,6 +222,7 @@ let easyComm = {
                     }
                 })
             });
+            
             // Обработка клика по кнопке "Отмена" в форме ответа. Прячет форму ответа.
             document.querySelectorAll('.js-ec-reply-form-cancel').forEach(function (el) {
                 el.addEventListener('click', function (event) {
@@ -268,9 +272,16 @@ let easyComm = {
                             if (response.data && response.data.length) {
                                 for (let i = 0; i < response.data.length; i++) {
                                     let error = response.data[i];
-                                    let inputGroup = form.querySelector('[name="' + error.field + '"]').closest(easyComm.selectors.inputParent);
-                                    if (inputGroup) {
-                                        inputGroup.classList.add(easyComm.classes.hasError);
+                                    // let inputGroup = form.querySelector('[name="' + error.field + '"]').closest(easyComm.selectors.inputParent);
+                                    // if (inputGroup) {
+                                    //     inputGroup.classList.add(easyComm.classes.hasError);
+                                    // }
+                                    let inputEl = form.querySelector('[name="' + error.field + '"]');
+                                    if (inputEl) {
+                                        let inputGroup = inputEl.closest(easyComm.selectors.inputParent);
+                                        if (inputGroup) {
+                                            inputGroup.classList.add(easyComm.classes.hasError);
+                                        }
                                     }
                                     let errorEl = form.querySelector('#' + fid + '-' + error.field + '-error');
                                     if (errorEl) {
@@ -392,10 +403,99 @@ easyComm.custom = {
             }
         });
     },
+    
+    initSmiles: function (root = document) {
+        root.querySelectorAll('.ec-smiles button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const textarea = btn.closest('form').querySelector('textarea[name="text"]');
+                if (!textarea) return;
+    
+                const smile = btn.dataset.smile;
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+    
+                textarea.setRangeText(smile, start, end, 'end');
+                textarea.focus();
+            });
+        });
+    },
+    
+    initQuotes: function (root = document) {
+    root.querySelectorAll('.js-ec-quote').forEach(btn => {
+        if (btn.dataset.quoteBound) return;
+        btn.dataset.quoteBound = '1';
+
+        btn.addEventListener('click', e => {
+            e.preventDefault();
+
+            const author    = btn.dataset.author || '';
+            const text      = btn.dataset.text || '';
+            const thread    = btn.dataset.ecThread;
+            const messageId = btn.dataset.ecMessage;   // обязательно
+            const parentId  = btn.dataset.ecParent || '';
+
+            if (!thread || !messageId) return;
+
+            const replyForm = document.getElementById('ec-reply-form-' + thread);
+            if (!replyForm) return;
+
+            // 🔑 обязательно для reply/create
+            const msgInput = replyForm.querySelector('input[name="message_id"]');
+            const parentInput = replyForm.querySelector('input[name="parent_id"]');
+
+            if (!msgInput || !parentInput) return;
+
+            msgInput.value = messageId;
+            parentInput.value = parentId;
+
+            // 📍 позиционирование формы
+            const replyEl   = btn.closest('.ec-reply');
+            const messageEl = btn.closest('.ec-message');
+
+            if (replyEl) {
+                replyEl.after(replyForm);
+            } else if (messageEl) {
+                messageEl.after(replyForm);
+            }
+
+            const textarea = replyForm.querySelector('textarea[name="text"]');
+            if (!textarea) return;
+
+            textarea.value =`[quote=${author}]${text}[/quote]`;
+
+            replyForm.classList.remove('ec-d-none');
+            setTimeout(() => textarea.focus(), 0);
+        });
+    });
+},
+
+
+
+    
+    initCounters: function (root = document) {
+        root.querySelectorAll('textarea[data-maxlength]').forEach(area => {
+            const max = parseInt(area.dataset.maxlength, 10);
+            const counter = area.parentNode.querySelector('.ec-counter .current');
+            if (!counter) return;
+    
+            const update = () => {
+                if (area.value.length > max) {
+                    area.value = area.value.slice(0, max);
+                }
+                counter.textContent = area.value.length;
+            };
+    
+            area.addEventListener('input', update);
+            update();
+        });
+    },
 
     refresh: function (root = document) {
         easyComm.custom.updateTimes(root);
         easyComm.custom.applyReplyNesting(root);
+        easyComm.custom.initSmiles(root);
+        easyComm.custom.initCounters(root);
+        easyComm.custom.initQuotes(root);
     }
 };
 
